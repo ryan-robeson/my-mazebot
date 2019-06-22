@@ -224,13 +224,6 @@ async function main() {
   // E = [0,1]
   // W = [0,-1]
 
-  const symbols = {
-    "start": 'A',
-    "goal": 'B',
-    "wall": 'X',
-    "floor": ' '
-  };
-
   if (online) {
     maze = await apiGet('mazebot/random', onlineParams).catch(err => {
       console.log(err);
