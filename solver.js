@@ -47,17 +47,21 @@ const fromFile = async (number) => {
   });
 };
 
-const logMaze = (map) => {
-  for (let row of map) {
+const logMaze = (map, path) => {
+  let m = map;
+  if (path) {
+    for (let f of path) {
+      if (m[f[0]][f[1]] == ' ') {
+        m[f[0]][f[1]] = '.';
+      }
+    }
+  }
+  for (let row of m) {
     console.log(row.join(''));
   }
 };
 
 const solve = (map, start, end) => {
-  //let solved = false;
-  //let steps = [];
-  //let pos = start;
-
   const heuristic = (n, goal) => {
     return Math.abs(goal[0] - n[0]) + Math.abs(goal[1] - n[1]);
   }
@@ -172,7 +176,7 @@ const solve = (map, start, end) => {
       //console.log(start);
       //console.log(current);
       //console.log(end);
-      console.log('Found the end');
+      //console.log('Found the end');
       path = toPath(cameFrom, current);
       directions = toCompass(path);
       break;
@@ -208,17 +212,16 @@ const solve = (map, start, end) => {
   }
 
   //console.log(path);
-  console.log(directions.join(''));
-  let solvedMap = map;
-  logMaze(map);
+  //console.log(directions.join(''));
+  //logMaze(map);
 
-  console.log(`\n\nSolution:\n`)
-  for (let f of path) {
-    if (solvedMap[f[0]][f[1]] == ' ') {
-      solvedMap[f[0]][f[1]] = '.';
-    }
+  //console.log(`\n\nSolution:\n`)
+  //logMaze(map, path);
+
+  return {
+    directions: directions,
+    path: path
   }
-  logMaze(solvedMap);
 };
 
 async function main() {
@@ -279,9 +282,9 @@ async function main() {
   console.log(startingPosition);
   console.log(endingPosition);
 
-  //logMaze(map);
+  let { directions, path } = solve(map, startingPosition, endingPosition);
 
-  solve(map, startingPosition, endingPosition);
+  logMaze(map, path);
 }
 
 main();
