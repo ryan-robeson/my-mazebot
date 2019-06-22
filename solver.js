@@ -80,17 +80,9 @@ const solve = (map, start, end) => {
   let directions = [];
 
   const nextNode = (discoveredNodes) => {
-    //console.log(discoveredNodes);
     const keys = Object.keys(discoveredNodes).filter(k => discoveredNodes[k] !== undefined);
-    //console.log(`keys: ${keys}`);
     let lowestNode = keys[0];
-    //console.log(`lowestNode: ${lowestNode}`);
     let lowestScore = startToGoal[lowestNode];
-    //console.log(lowestScore);
-    //if (lowestScore === undefined) {
-    //  lowestNode = undefined;
-    //  lowestScore = Infinity;
-    //}
     for (let i = 1; i < keys.length; i++) {
       let node = keys[i];
       let nodeScore = startToGoal[node];
@@ -167,15 +159,9 @@ const solve = (map, start, end) => {
     return directions;
   };
 
-  //console.log(startToGoal);
-
   while (Object.values(discovered).some(v => v !== undefined)) {
     let current = nextNode(discovered);
-    //console.log(current);
     if (current[0] == end[0] && current[1] == end[1]) {
-      //console.log(start);
-      //console.log(current);
-      //console.log(end);
       //console.log('Found the end');
       path = toPath(cameFrom, current);
       directions = toCompass(path);
@@ -184,7 +170,6 @@ const solve = (map, start, end) => {
 
     // Remove the current node from discovered nodes
     discovered[current] = undefined;
-    //console.log(neighbors(current));
 
     // Add it to evaluated nodes
     evaluated[current] = 1;
@@ -195,12 +180,12 @@ const solve = (map, start, end) => {
       }
 
       // Distance from start to neighbor
+      // We add one because we can only move one unit at a time.
       tentativeStartToNodeScore = startToNode[current] + 1
 
       if (discovered[n] === undefined)  {
         discovered[n] = 1;
       } else if (tentativeStartToNodeScore >= startToNode[n]) {
-        //console.log("tentative score too high");
         continue;
       }
 
@@ -210,13 +195,6 @@ const solve = (map, start, end) => {
       startToGoal[n] = startToNode[n] + heuristic(n, end);
     }
   }
-
-  //console.log(path);
-  //console.log(directions.join(''));
-  //logMaze(map);
-
-  //console.log(`\n\nSolution:\n`)
-  //logMaze(map, path);
 
   return {
     directions: directions,
@@ -279,13 +257,11 @@ async function main() {
   }
 
   console.log(name);
-  console.log(startingPosition);
-  console.log(endingPosition);
 
   let { directions, path } = solve(map, startingPosition, endingPosition);
 
+  // Print solution
   logMaze(map, path);
 }
 
 main();
-//process.stdin.resume();
