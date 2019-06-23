@@ -182,11 +182,9 @@ const solve = (map, start, end) => {
 
   const toPath = (cameFromNodes, currentNode) => {
     let totalPath = [currentNode];
-    for (let i = 0; i < Object.keys(cameFromNodes).length; i++) {
+
+    while (cameFromNodes[currentNode]) {
       currentNode = cameFromNodes[currentNode];
-      if (currentNode === undefined) {
-        break;
-      }
       totalPath.push(currentNode);
     }
 
@@ -423,11 +421,11 @@ async function main() {
   const online = false;
   const onlineParams = {
     maxSize: 200,
-    //minSize: 200
+    minSize: 200
   };
-  const saveMaze = false;
+  const saveMaze = true;
   const sendSolution = true;
-  const localNumber = 1005;
+  const localNumber = 1480;
 
   if (mode == 'single') {
     await runSingle(online, onlineParams, saveMaze, sendSolution, localNumber);
