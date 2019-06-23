@@ -10,7 +10,7 @@ var fs = require('fs');
 const apiGet = async (path, parameters = {}) => {
   let query = url.format({query: parameters});
   return new Promise((resolve, reject) => {
-    http.get('http://api.noopschallenge.com/' + path + query, function(res) {
+    http.get('http://api.noopschallenge.com' + path + query, function(res) {
       const { statusCode } = res;
 
       if (statusCode < 200 || statusCode > 299) {
@@ -74,6 +74,9 @@ const apiPost = async (path, parameters = {}) => {
 
 //const postSolution = async (path, directions) => {
 const postSolution = (path, directions) => {
+  if (Array.isArray(directions)) {
+    directions = directions.join('');
+  }
   return apiPost(path, {directions: directions});
 };
 
@@ -245,31 +248,14 @@ const solve = (map, start, end) => {
   }
 };
 
-async function main() {
-  const online = true;
-  const onlineParams = {
-    maxSize: 200,
-    //minSize: 200
-  };
-  const saveMaze = false && online;
-  const sendSolution = true && online;
-  const localNumber = 417;
+const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumber) => {
+  saveMaze = saveMaze && online;
+  sendSolution = sendSolution && online;
+
   let maze = '';
 
-  // [  0 0 0 0 0 0
-  //    0 1 2 3 4 5
-  // 0 [X, , ,X,X,X],
-  // 1 [X, ,., ,X,X],
-  // 2 [X, , , , ,X]
-  // ]
-  // . = 1, 2
-  // N = [-1,0]
-  // S = [1,0]
-  // E = [0,1]
-  // W = [0,-1]
-
   if (online) {
-    maze = await apiGet('mazebot/random', onlineParams).catch(err => {
+    maze = await apiGet('/mazebot/random', onlineParams).catch(err => {
       console.log(err);
       process.exit(1);
     });
@@ -313,6 +299,109 @@ async function main() {
 
   // Print solution
   logMaze(map, path);
+};
+
+const runRace = async () => {
+  let login = 'ryan-robeson';
+  // Start race
+  let { nextMaze } = await apiPost('/mazebot/race/start',
+    { 'login': login }).catch(err => {
+      console.log(err.message);
+      process.exit(1);
+    });
+
+  console.log(nextMaze);
+  let maze = await apiGet(nextMaze).catch(err => {
+    //console.log('Getting next maze');
+    console.log(err.message);
+    process.exit(1);
+  });
+
+  let { name, map, startingPosition, endingPosition, mazePath } = maze;
+
+  // Starting and ending positions are given backwards?
+  startingPosition = [startingPosition[1], startingPosition[0]];
+  endingPosition = [endingPosition[1], endingPosition[0]];
+
+  let { directions, path } = solve(map, startingPosition, endingPosition);
+
+  let res = await postSolution(mazePath, directions);
+
+  while (res['result'] == 'success') {
+    let { nextMaze } = res;
+
+    let maze = await apiGet(nextMaze).catch(err => {
+      console.log(err.message);
+      process.exit(1);
+    });
+
+    let { name, map, startingPosition, endingPosition, mazePath } = maze;
+    startingPosition = [startingPosition[1], startingPosition[0]];
+    endingPosition = [endingPosition[1], endingPosition[0]];
+
+    console.log(`Solving ${name}`);
+
+    let { directions, path } = solve(map, startingPosition, endingPosition);
+    res = await postSolution(mazePath, directions);
+  }
+
+  if (res['result'] == 'finished') {
+    let border = '='.repeat(40);
+    let cert = res['certificate'];
+    let fullCert = `http://api.noopschallenge.com${cert}`;
+
+    console.log(border);
+    console.log(res['message']);
+    console.log(fullCert);
+    console.log(border);
+
+    let { completed, elapsed, message, err } = await apiGet(cert).catch(err => {
+      console.log(`Failed to get certificate: ${err.message}`);
+      return { err: true };
+    });
+
+    if (!err) {
+      let certFile = fs.createWriteStream('completion-certs.txt', { 'flags': 'a' });
+      certFile.write(`${completed} - ${elapsed}:\n`);
+      certFile.end(fullCert);
+    }
+
+  } else {
+    console.log('I think something went wrong \\_(^.^)_/');
+    console.log(res);
+  }
+};
+
+// [  0 0 0 0 0 0
+//    0 1 2 3 4 5
+// 0 [X, , ,X,X,X],
+// 1 [X, ,., ,X,X],
+// 2 [X, , , , ,X]
+// ]
+// . = 1, 2
+// N = [-1,0]
+// S = [1,0]
+// E = [0,1]
+// W = [0,-1]
+
+async function main() {
+  const mode = 'race'; // 'race' or 'single'
+
+  const online = true;
+  const onlineParams = {
+    maxSize: 200,
+    //minSize: 200
+  };
+  const saveMaze = false;
+  const sendSolution = true;
+  const localNumber = 417;
+
+  if (mode == 'single') {
+    await runSingle(online, onlineParams, saveMaze, sendSolution, localNumber);
+  } else if (mode == 'race') {
+    await runRace();
+  }
+
 }
 
 main();

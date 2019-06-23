@@ -1,0 +1,5 @@
+# Noops Challenge Mazebot Completion Certificate
+113.444 seconds:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDB9zCSobbO2BlWzHEVMr6s7y9r_rIa2xInAs1oLqIQgj
+2019-06-23T20:47:10.601Z - 110.137 seconds:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDB8MqFNnCfxAflQ__o35iumCeityKL0fASXM4i_xCIQI
