@@ -225,7 +225,7 @@ const solve = (map, start, end) => {
     return directions;
   };
 
-  while (Object.values(discovered).some(v => v !== undefined)) {
+  while (Object.keys(discovered).length > 0) {
     let current = nextNode(discovered);
     if (current[0] == end[0] && current[1] == end[1]) {
       //console.log('Found the end');
