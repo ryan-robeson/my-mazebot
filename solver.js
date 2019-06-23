@@ -235,7 +235,7 @@ const solve = (map, start, end) => {
     }
 
     // Remove the current node from discovered nodes
-    discovered[current] = undefined;
+    delete discovered[current];
 
     // Add it to evaluated nodes
     evaluated[current] = 1;
@@ -415,7 +415,7 @@ const runRace = async () => {
 // W = [0,-1]
 
 async function main() {
-  const mode = 'single'; // 'race' or 'single'
+  const mode = 'race'; // 'race' or 'single'
 
   const online = false;
   const onlineParams = {
