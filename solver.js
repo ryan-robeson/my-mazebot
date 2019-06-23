@@ -148,7 +148,7 @@ const solve = (map, start, end) => {
   let directions = [];
 
   const nextNode = (discoveredNodes) => {
-    const keys = Object.keys(discoveredNodes).filter(k => discoveredNodes[k] !== undefined);
+    const keys = Object.keys(discoveredNodes);
     let lowestNode = keys[0];
     let lowestScore = startToGoal[lowestNode];
     for (let i = 1; i < keys.length; i++) {
