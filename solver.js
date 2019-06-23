@@ -7,6 +7,7 @@ var fs = require('fs');
 // Written for GitHub's Noops Challenge (Mazebot)
 // https://github.com/noops-challenge/mazebot
 
+// parameters are converted to a query string format
 const apiGet = async (path, parameters = {}) => {
   let query = url.format({query: parameters});
   return new Promise((resolve, reject) => {
@@ -34,6 +35,8 @@ const apiGet = async (path, parameters = {}) => {
   })
 };
 
+// Assumes a JSON API.
+// parameters will be JSON.stringify'd.
 const apiPost = async (path, parameters = {}) => {
   const postData = JSON.stringify(parameters);
 
@@ -72,7 +75,6 @@ const apiPost = async (path, parameters = {}) => {
   })
 };
 
-//const postSolution = async (path, directions) => {
 const postSolution = (path, directions) => {
   if (Array.isArray(directions)) {
     directions = directions.join('');
@@ -93,6 +95,11 @@ const fromFile = async (number) => {
   });
 };
 
+// Logs the simple representation of the maze to the console.
+// If `path` is given, also draws the path from start to finish.
+// map - Array of Arrays describing the maze
+//       (North -> South, West -> East)
+// path - Array of Arrays describing the solution for the maze.
 const logMaze = (map, path) => {
   let m = map;
   if (path) {
@@ -107,22 +114,37 @@ const logMaze = (map, path) => {
   }
 };
 
+// Solve with A*
+// Thanks Wikipedia
+// See: https://en.wikipedia.org/wiki/A*_search_algorithm
 const solve = (map, start, end) => {
+  // heuristic is the straight line distance from
+  // the given node to the goal
   const heuristic = (n, goal) => {
     return Math.abs(goal[0] - n[0]) + Math.abs(goal[1] - n[1]);
   }
 
+  // evaluated records nodes that have been visited already
   let evaluated = {};
+  // discovered records nodes that are found but have not been
+  // evaluated
   let discovered = {};
-  discovered[start] = 1;
+  discovered[start] = 1; // Start is the only known node
+  // for each node, the most efficient node that it can be reached
+  // from.
   let cameFrom = {};
+  // Distance from the start node to a given node.
   let startToNode = {}; // gScore
-  startToNode[start] = 0;
+  startToNode[start] = 0; // start is zero units from start
 
+  // Distance from the start node to the goal node through a given node.
+  // Partially based on heuristic.
   let startToGoal = {}; // fScore
-  startToGoal[start] = heuristic(start,end);
+  startToGoal[start] = heuristic(start,end); // entirely heuristic for the start
 
+  // The actual path through the maze => [ [1,1], [1,2], [2,2]... ]
   let path = [];
+  // The compass directions through the maze => ['E','N'...]
   let directions = [];
 
   const nextNode = (discoveredNodes) => {
@@ -284,7 +306,7 @@ const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumb
   let { directions, path } = solve(map, startingPosition, endingPosition);
 
   if (sendSolution) {
-    let { result, message, shortestSolutionLength, yourSolutionLength, elapsed } = await postSolution(mazePath, directions.join('')).catch(err => {
+    let { result, message, shortestSolutionLength, yourSolutionLength, elapsed } = await postSolution(mazePath, directions).catch(err => {
       console.log(err);
       console.log(`mazePath => ${mazePath}\ndirections => ${directions}`);
       return {}; // keeps destructuring from failing on error
