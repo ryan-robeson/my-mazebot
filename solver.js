@@ -34,6 +34,49 @@ const apiGet = async (path, parameters = {}) => {
   })
 };
 
+const apiPost = async (path, parameters = {}) => {
+  const postData = JSON.stringify(parameters);
+
+  let options = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    const req = http.request('http://api.noopschallenge.com' + path, options, function(res) {
+      const { statusCode } = res;
+      // 400 is a valid code when an incorrect solution is sent.
+      if (statusCode < 200 || ( statusCode > 299 && statusCode != 400 )) {
+        reject(new Error('API Response failure: ' + statusCode));
+      }
+
+      res.setEncoding('utf8');
+
+      let data = '';
+
+      res.on('data', chunk => { data += chunk; } );
+
+      res.once('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(new Error('Failed to parse JSON: ' + e));
+        }
+      })
+    });
+
+    req.write(postData);
+    req.end();
+  })
+};
+
+//const postSolution = async (path, directions) => {
+const postSolution = (path, directions) => {
+  return apiPost(path, {directions: directions});
+};
+
 const fromFile = async (number) => {
   return new Promise((resolve, reject) => {
     fs.readFile('./mazes/' + number + '.json', (err, data) => {
@@ -203,13 +246,14 @@ const solve = (map, start, end) => {
 };
 
 async function main() {
-  let online = true;
-  let onlineParams = {
+  const online = true;
+  const onlineParams = {
     maxSize: 200,
     //minSize: 200
   };
-  let saveMaze = false && online;
-  let localNumber = 417;
+  const saveMaze = false && online;
+  const sendSolution = true && online;
+  const localNumber = 417;
   let maze = '';
 
   // [  0 0 0 0 0 0
@@ -252,6 +296,20 @@ async function main() {
   console.log(name);
 
   let { directions, path } = solve(map, startingPosition, endingPosition);
+
+  if (sendSolution) {
+    let { result, message, shortestSolutionLength, yourSolutionLength, elapsed } = await postSolution(mazePath, directions.join('')).catch(err => {
+      console.log(err);
+      console.log(`mazePath => ${mazePath}\ndirections => ${directions}`);
+      return {}; // keeps destructuring from failing on error
+    });
+
+    if (result == "success") {
+      console.log(`${message}\nShortest: ${shortestSolutionLength}, Yours: ${yourSolutionLength}`);
+    } else {
+      console.log(message);
+    }
+  }
 
   // Print solution
   logMaze(map, path);
