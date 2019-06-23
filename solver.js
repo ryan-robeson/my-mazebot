@@ -167,10 +167,10 @@ const solve = (map, start, end) => {
   const neighbors = (node) => {
     let n = node;
     return [
-      [ n[0], n[1]+1],
-      [ n[0], n[1]-1],
-      [ n[0]+1, n[1]],
-      [ n[0]-1, n[1]]
+      [ n[0], n[1]+1 ],
+      [ n[0], n[1]-1 ],
+      [ n[0]+1, n[1] ],
+      [ n[0]-1, n[1] ]
     ].filter((r) => {
       return r[0] < map.length &&
         r[0] >= 0 &&
@@ -341,7 +341,6 @@ const runRace = async () => {
       process.exit(1);
     });
 
-  console.log(nextMaze);
   let maze = await apiGet(nextMaze).catch(err => {
     //console.log('Getting next maze');
     console.log(err.message);
@@ -394,7 +393,7 @@ const runRace = async () => {
     if (!err) {
       let certFile = fs.createWriteStream('completion-certs.txt', { 'flags': 'a' });
       certFile.write(`${completed} - ${elapsed}:\n`);
-      certFile.end(fullCert);
+      certFile.end(fullCert + "\n");
     }
 
   } else {

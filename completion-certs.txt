@@ -3,3 +3,9 @@
 http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDB9zCSobbO2BlWzHEVMr6s7y9r_rIa2xInAs1oLqIQgj
 2019-06-23T20:47:10.601Z - 110.137 seconds:
 http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDB8MqFNnCfxAflQ__o35iumCeityKL0fASXM4i_xCIQI
+2019-06-23T21:48:37.665Z - 109.094:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDKkkBw6n9HYEXv4aRRDqpry_iShNKdXWN6C0UNYP6quE
+2019-06-23T22:24:08.385Z - 82.685:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDP5PEnle0tHZL3FIZMSiJOVk62KvMI_YfhVfivQiclM8
+2019-06-23T22:30:38.292Z - 105.571:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDEKF0HrVAFwdFkUi-9N0b1XSSyg5X2gVTQWp5z7c6_QP
