@@ -275,6 +275,9 @@ const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumb
   sendSolution = sendSolution && online;
 
   let maze = '';
+  // Measure perf
+  let startTime = process.hrtime.bigint();
+  let endTime;
 
   if (online) {
     maze = await apiGet('/mazebot/random', onlineParams).catch(err => {
@@ -305,6 +308,14 @@ const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumb
 
   let { directions, path } = solve(map, startingPosition, endingPosition);
 
+  // Measure perf
+  endTime = process.hrtime.bigint();
+
+  let measuredElapsed = endTime - startTime;
+  // Convert nanoseconds to seconds
+  let measuredElapsedSeconds = Number(measuredElapsed * 1000n / BigInt(1e9)) / 1000;
+  console.log(`Elapsed: ${measuredElapsed}ns => ${measuredElapsedSeconds}s`);
+
   if (sendSolution) {
     let { result, message, shortestSolutionLength, yourSolutionLength, elapsed } = await postSolution(mazePath, directions).catch(err => {
       console.log(err);
@@ -320,7 +331,7 @@ const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumb
   }
 
   // Print solution
-  logMaze(map, path);
+  //logMaze(map, path);
 };
 
 const runRace = async () => {
@@ -407,16 +418,16 @@ const runRace = async () => {
 // W = [0,-1]
 
 async function main() {
-  const mode = 'race'; // 'race' or 'single'
+  const mode = 'single'; // 'race' or 'single'
 
-  const online = true;
+  const online = false;
   const onlineParams = {
     maxSize: 200,
     //minSize: 200
   };
   const saveMaze = false;
   const sendSolution = true;
-  const localNumber = 417;
+  const localNumber = 1005;
 
   if (mode == 'single') {
     await runSingle(online, onlineParams, saveMaze, sendSolution, localNumber);
