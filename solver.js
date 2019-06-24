@@ -353,7 +353,7 @@ const runRace = async () => {
   startingPosition = [startingPosition[1], startingPosition[0]];
   endingPosition = [endingPosition[1], endingPosition[0]];
 
-  console.log(`Solving ${name}`);
+  //console.log(`Solving ${name}`);
 
   let { directions, path } = solve(map, startingPosition, endingPosition);
 
@@ -371,7 +371,7 @@ const runRace = async () => {
     startingPosition = [startingPosition[1], startingPosition[0]];
     endingPosition = [endingPosition[1], endingPosition[0]];
 
-    console.log(`Solving ${name}`);
+    //console.log(`Solving ${name}`);
 
     let { directions, path } = solve(map, startingPosition, endingPosition);
     res = await postSolution(mazePath, directions);
