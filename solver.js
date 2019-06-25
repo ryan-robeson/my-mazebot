@@ -7,6 +7,9 @@ var fs = require('fs');
 // Written for GitHub's Noops Challenge (Mazebot)
 // https://github.com/noops-challenge/mazebot
 
+// keepAlive saves substantial time for online runs
+http.globalAgent.keepAlive = true;
+
 // parameters are converted to a query string format
 const apiGet = async (path, parameters = {}) => {
   let query = url.format({query: parameters});
