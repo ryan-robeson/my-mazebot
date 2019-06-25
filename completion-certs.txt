@@ -53,3 +53,15 @@ http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDL0fJ
 http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDPOSl7mnhgWAE3zixvvZyc9gEcQZwJncXlIDqLhiCnGT
 2019-06-25T16:51:57.401Z - 2.088:
 http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDI6QT6ZgpDYcn2RHWD9nHYXWRfDDK3T1FmNwpS97QsWQ
+2019-06-25T19:08:58.690Z - 1.677:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDD30IWp-XmeV7hAD_gMWaCNeyiPfu4GFPEQPW6matCLf
+2019-06-25T19:09:09.074Z - 1.845:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDINuIp9Ojuiz9dmhI-Bw0NW0s28xO1z-IJ-8aQc_Vp3S
+2019-06-25T19:09:15.158Z - 1.788:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDM2a2oWl54_Utkx69OpZuYAftNPJTKqupNvKyXGAV263
+2019-06-25T19:11:14.466Z - 1.719:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDN7istZzSoPeEOH_bhfGa04_F-_PPzMxjaHZh0Hrdiln
+2019-06-25T19:19:32.242Z - 1.692:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDJvHKG4PgpBQGHvNR14PEv89A2qyhes2P_reJvRjV1iR
+2019-06-25T19:19:36.311Z - 1.62:
+http://api.noopschallenge.com/mazebot/race/certificate/RMBYimjxz606XPe4w5LRDCFeF_ERRei3JnaRlmKq2Su169zZDiHwhixaPeR_cABn

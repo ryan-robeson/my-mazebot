@@ -117,6 +117,104 @@ const logMaze = (map, path) => {
   }
 };
 
+// Implemented from memory/intuition, but this is just a fun coding exercise.
+// The behavior appears to be correct and offers a small speedup.
+// Probably leaves performance on the table since I didn't use a heap.
+const priorityQueue = () => {
+  let items = [];
+  let queue = undefined
+  let itemsInQueue = {};
+  let length = 0;
+
+  const isEmpty = () => {
+    return length < 1 ? true : false;
+  };
+
+  const insert = (node, startToGoal) => {
+    if (startToGoal === undefined) {
+      startToGoal = Infinity;
+    }
+    let thisNode = {
+      node: node,
+      value: startToGoal,
+      index: 0, // First node will be at 0
+      prev: undefined
+    };
+
+    itemsInQueue[node] = 1;
+
+    length += 1;
+
+    if (queue === undefined || queue.first === undefined) {
+      items.push(thisNode);
+
+      queue = {
+        first: thisNode,
+      }
+      return;
+    }
+
+    thisNode.index = items.push(thisNode) - 1;
+
+    if (thisNode.value < queue.first.value) {
+      // New top node
+      thisNode.prev = queue.first.index;
+      queue.first = thisNode;
+      return;
+    }
+
+    // Find out where this node fits in the queue
+    let headNode = queue.first;
+    let nextNode = items[headNode.prev];
+    let found = false;
+
+    while (nextNode !== undefined) {
+      if (thisNode.value <= nextNode.value) {
+        headNode.prev = thisNode.index;
+        thisNode.prev = nextNode.index;
+        found = true;
+        break;
+      } else {
+        headNode = nextNode;
+        nextNode = items[headNode.prev];
+      }
+    }
+
+    if (!found) {
+      // Must be at the end
+      headNode.prev = thisNode.index;
+    }
+  };
+
+  const pop = () => {
+    if (isEmpty() || queue.first === undefined) {
+      return undefined;
+    }
+
+    let node = queue.first.node;
+    let index = queue.first.index;
+
+    queue.first = items[queue.first.prev];
+    delete items[index];
+    delete itemsInQueue[node];
+
+    length -= 1;
+
+    return node;
+  };
+
+  const has = (node) => {
+    return itemsInQueue[node] === 1 ? true : false;
+  };
+
+  return {
+    isEmpty: isEmpty,
+    insert: insert,
+    pop: pop,
+    has: has
+  }
+};
+
 // Solve with A*
 // Thanks Wikipedia
 // See: https://en.wikipedia.org/wiki/A*_search_algorithm
@@ -131,8 +229,8 @@ const solve = (map, start, end) => {
   let evaluated = {};
   // discovered records nodes that are found but have not been
   // evaluated
-  let discovered = {};
-  discovered[start] = 1; // Start is the only known node
+  let discovered = priorityQueue();
+
   // for each node, the most efficient node that it can be reached
   // from.
   let cameFrom = {};
@@ -145,26 +243,15 @@ const solve = (map, start, end) => {
   let startToGoal = {}; // fScore
   startToGoal[start] = heuristic(start,end); // entirely heuristic for the start
 
+  discovered.insert(start, startToGoal[start]); // Start is the only known node
+
   // The actual path through the maze => [ [1,1], [1,2], [2,2]... ]
   let path = [];
   // The compass directions through the maze => ['E','N'...]
   let directions = [];
 
-  const nextNode = (discoveredNodes) => {
-    const keys = Object.keys(discoveredNodes);
-    let lowestNode = keys[0];
-    let lowestScore = startToGoal[lowestNode];
-    for (let i = 1; i < keys.length; i++) {
-      let node = keys[i];
-      let nodeScore = startToGoal[node];
-
-      if (nodeScore < lowestScore) {
-        lowestNode = node;
-        lowestScore = nodeScore;
-      }
-    }
-    // Convert string back to array
-    return lowestNode.split(',').map(i => Number.parseInt(i));
+  const nextNode = () => {
+    return discovered.pop();
   };
 
   const neighbors = (node) => {
@@ -228,17 +315,14 @@ const solve = (map, start, end) => {
     return directions;
   };
 
-  while (Object.keys(discovered).length > 0) {
-    let current = nextNode(discovered);
+  while (!discovered.isEmpty()) {
+    let current = nextNode();
     if (current[0] == end[0] && current[1] == end[1]) {
       //console.log('Found the end');
       path = toPath(cameFrom, current);
       directions = toCompass(path);
       break;
     }
-
-    // Remove the current node from discovered nodes
-    delete discovered[current];
 
     // Add it to evaluated nodes
     evaluated[current] = 1;
@@ -252,8 +336,8 @@ const solve = (map, start, end) => {
       // We add one because we can only move one unit at a time.
       tentativeStartToNodeScore = startToNode[current] + 1
 
-      if (discovered[n] === undefined)  {
-        discovered[n] = 1;
+      if (!discovered.has(n))  {
+        discovered.insert(n, startToGoal[n]);
       } else if (tentativeStartToNodeScore >= startToNode[n]) {
         continue;
       }
