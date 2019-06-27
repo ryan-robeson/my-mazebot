@@ -117,6 +117,140 @@ const logMaze = (map, path) => {
   }
 };
 
+// Priority Queue based on a pairing heap
+// See: https://en.wikipedia.org/wiki/Pairing_heap
+const priorityQueuePairing = () => {
+  let length = 0;
+  let itemsInHeap = {};
+  let heap = {};
+
+  const merge = (newHeap) => {
+    if (heap.elem === undefined) {
+      heap = newHeap;
+      length = 1;
+      return;
+    }
+
+    length += 1;
+
+    if (heap.elem < newHeap.elem) {
+      heap.subheaps.push(newHeap);
+    } else {
+      newHeap.subheaps.push(heap);
+      heap = { node: newHeap.node, elem: newHeap.elem, subheaps: newHeap.subheaps };
+    }
+  };
+
+  const findMin = () => {
+    if (length < 1) {
+      return undefined;
+    }
+    return heap.node;
+  };
+
+  const deleteMin = () => {
+    if (isEmpty()) {
+      return;
+    }
+
+    const minNode = findMin();
+    const subheaps = heap.subheaps
+    length -= 1;
+
+    delete itemsInHeap[minNode];
+
+    if (subheaps.length < 1) {
+      heap.elem = undefined;
+      heap.node = undefined;
+      return;
+    }
+
+    if (subheaps.length === 1) {
+      heap.elem = subheaps[0].elem;
+      heap.node = subheaps[0].node;
+      heap.subheaps = subheaps[0].subheaps;
+      return ;
+    }
+
+    // 2 part merge
+    // part 1
+    let i = 0;
+    let l = subheaps.length;
+    let newHeaps = [];
+    for (i; i < l; i+=2) {
+      if (subheaps[i+1] === undefined) {
+        newHeaps.push({ node: subheaps[i].node, elem: subheaps[i].elem, subheaps: []});
+        break;
+      }
+      if (subheaps[i].elem < subheaps[i+1].elem) {
+        // subheaps[i] wins
+        newHeaps.push({ node: subheaps[i].node, elem: subheaps[i].elem, subheaps: subheaps[i].subheaps.concat(subheaps[i+1])});
+      } else {
+        // subheaps[i+1] wins
+        newHeaps.push({ node: subheaps[i+1].node, elem: subheaps[i+1].elem, subheaps: subheaps[i+1].subheaps.concat(subheaps[i])});
+      }
+    }
+
+    const newHeapsLength = newHeaps.length;
+    if (newHeapsLength === 1) {
+      heap.elem = newHeaps[0].elem;
+      heap.node = newHeaps[0].node;
+      heap.subheaps = newHeaps[0].subheaps;
+      return;
+    }
+
+    for (i = newHeapsLength - 1; i > 0; i--) {
+      if (newHeaps[i].elem <= newHeaps[i-1].elem) {
+        newHeaps[i].subheaps.push(newHeaps[i-1]);
+        newHeaps[i-1] = newHeaps[i];
+        newHeaps[i] = undefined;
+      } else {
+        newHeaps[i-1].subheaps.push(newHeaps[i]);
+      }
+    }
+
+    heap.elem = newHeaps[0].elem;
+    heap.node = newHeaps[0].node;
+    heap.subheaps = newHeaps[0].subheaps;
+  };
+
+  const insert = (node, startToGoal) => {
+    if (startToGoal === undefined) {
+      startToGoal = Infinity;
+    }
+
+    merge({ node: node, elem: startToGoal, subheaps: [] });
+    itemsInHeap[node] = 1;
+  };
+
+  const peek = () => {
+    return findMin();
+  };
+
+  const pop = () => {
+    const node = findMin()
+    deleteMin();
+    return node;
+  };
+
+  const isEmpty = () => {
+    return length < 1 ? true : false;
+  };
+
+  const has = (node) => {
+    return itemsInHeap[node] === 1;
+  };
+
+  return {
+    pop: pop,
+    insert: insert,
+    peek: peek,
+    isEmpty: isEmpty,
+    has: has,
+    _heap: () => { return heap }
+  }
+};
+
 // Implemented from memory/intuition, but this is just a fun coding exercise.
 // The behavior appears to be correct and offers a small speedup.
 // Probably leaves performance on the table since I didn't use a heap.
@@ -229,7 +363,8 @@ const solve = (map, start, end) => {
   let evaluated = {};
   // discovered records nodes that are found but have not been
   // evaluated
-  let discovered = priorityQueue();
+  //let discovered = priorityQueue();
+  let discovered = priorityQueuePairing();
 
   // for each node, the most efficient node that it can be reached
   // from.
@@ -504,9 +639,9 @@ const runRace = async () => {
 // W = [0,-1]
 
 async function main() {
-  const mode = 'race'; // 'race' or 'single'
+  const mode = 'single'; // 'race' or 'single'
 
-  const online = false;
+  const online = true;
   const onlineParams = {
     maxSize: 200,
     minSize: 200
@@ -524,3 +659,27 @@ async function main() {
 }
 
 main();
+
+
+const pqTest = () => {
+  const q = priorityQueuePairing();
+
+  q.insert([1,2], 7);
+  q.insert([5,4], 3);
+  q.insert([1,9], 2);
+  q.insert([8,4], 5);
+  q.insert([5,8], 6);
+  q.insert([6,9], 2);
+  q.insert([7,8], 2);
+  console.log(q.pop());
+  console.log(q.pop());
+  console.log(q.pop());
+  console.log(q.pop());
+  console.log(q.pop());
+  console.log(q.pop());
+  //q.insert([6,8], 1);
+  //console.dir(q._heap().subheaps[0].subheaps, { depth: null });
+  //console.log(q.has([1,2]));
+};
+
+//pqTest();
