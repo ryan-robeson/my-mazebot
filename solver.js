@@ -117,6 +117,60 @@ const logMaze = (map, path) => {
   }
 };
 
+// Measure run time of code
+// Takes a key and an optional callback
+// The callback can be given at the start of the measurement, where it will be
+// stored and ran when the measurement ends, or at the end of the measurement,
+// where it will override any previous callback.
+// If true is given as the callback at the end of the measurement, the default
+// callback will be used, overriding any previous callback.
+// Returns
+// the 'state' of the measurement 'started' or 'finished'
+// the elapsed time 'asNanoseconds'
+// and as 'seconds'
+const measure = (() => {
+  let measurements = {};
+  let defaultCallback = (ns, s, key) => {
+    console.log(`Elapsed (${key}): ${ns}ns => ${s}s`);
+  };
+
+  return (key, cb) => {
+    if (typeof measurements[key] === 'undefined') {
+      // Starting measurement
+      measurements[key] = { start: process.hrtime.bigint() };
+      if (typeof cb === 'function') {
+        measurements[key].cb = cb;
+      }
+      return { state: 'started' }
+    } else {
+      // Finishing measurement
+      let m = measurements[key];
+      let start = m['start'];
+      let ns = process.hrtime.bigint();
+      let elapsed = ns - start;
+      let seconds = Number(elapsed * 1000n / BigInt(1e9)) / 1000;
+
+      if (typeof cb !== 'undefined') {
+        if (cb === true) {
+          defaultCallback(elapsed, seconds, key);
+        } else {
+          cb(elapsed, seconds, key);
+        }
+      } else if (typeof m['cb'] !== undefined) {
+        m['cb'](elapsed, seconds, key);
+      }
+
+      delete measurements[key];
+
+      return {
+        state: 'finished',
+        asNanoseconds: elapsed,
+        asSeconds: seconds
+      }
+    }
+  }
+})();
+
 // Priority Queue based on a pairing heap
 // See: https://en.wikipedia.org/wiki/Pairing_heap
 const priorityQueuePairing = () => {
@@ -571,8 +625,7 @@ const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumb
 
   let maze = '';
   // Measure perf
-  let startTime = process.hrtime.bigint();
-  let endTime;
+  measure('Run single including load');
 
   if (online) {
     maze = await apiGet('/mazebot/random', onlineParams).catch(err => {
@@ -601,15 +654,11 @@ const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumb
 
   console.log(name);
 
+  measure('Solve only');
   let { directions, path } = solve(map, startingPosition, endingPosition);
+  measure('Solve only', true);
 
-  // Measure perf
-  endTime = process.hrtime.bigint();
-
-  let measuredElapsed = endTime - startTime;
-  // Convert nanoseconds to seconds
-  let measuredElapsedSeconds = Number(measuredElapsed * 1000n / BigInt(1e9)) / 1000;
-  console.log(`Elapsed: ${measuredElapsed}ns => ${measuredElapsedSeconds}s`);
+  measure('Run single including load', true);
 
   if (sendSolution) {
     let { result, message, shortestSolutionLength, yourSolutionLength, elapsed } = await postSolution(mazePath, directions).catch(err => {
