@@ -156,7 +156,7 @@ const measure = (() => {
         } else {
           cb(elapsed, seconds, key);
         }
-      } else if (typeof m['cb'] !== undefined) {
+      } else if (typeof m['cb'] !== 'undefined') {
         m['cb'](elapsed, seconds, key);
       }
 
@@ -679,7 +679,17 @@ const runSingle = async (online, onlineParams, saveMaze, sendSolution, localNumb
 };
 
 const runRace = async () => {
+  const gatherMetrics = true;
+
+  let metrics = [];
+  const addMetric = (key) => {
+
+    metrics.push({ name: key, result: measure(key) });
+  };
+
   let login = 'ryan-robeson';
+
+  measure('StartRace');
   // Start race
   let { nextMaze } = await apiPost('/mazebot/race/start',
     { 'login': login }).catch(err => {
@@ -687,11 +697,15 @@ const runRace = async () => {
       process.exit(1);
     });
 
+  // The challenge seems to start measuring here.
+  measure('WholeRace');
+
   let maze = await apiGet(nextMaze).catch(err => {
     //console.log('Getting next maze');
     console.log(err.message);
     process.exit(1);
   });
+  addMetric('StartRace');
 
   let { name, map, startingPosition, endingPosition, mazePath } = maze;
 
@@ -701,17 +715,23 @@ const runRace = async () => {
 
   console.log(`Solving ${name}`);
 
+  measure(`Solve-${name}`);
   let { directions, path } = solve(map, startingPosition, endingPosition);
+  addMetric(`Solve-${name}`);
 
+  measure(`Response-${name}`);
   let res = await postSolution(mazePath, directions);
+  addMetric(`Response-${name}`);
 
   while (res['result'] == 'success') {
     let { nextMaze } = res;
 
+    measure(`Get-${nextMaze}`);
     let maze = await apiGet(nextMaze).catch(err => {
       console.log(err.message);
       process.exit(1);
     });
+    addMetric(`Get-${nextMaze}`);
 
     let { name, map, startingPosition, endingPosition, mazePath } = maze;
     startingPosition = [startingPosition[1], startingPosition[0]];
@@ -719,9 +739,15 @@ const runRace = async () => {
 
     console.log(`Solving ${name}`);
 
+    measure(`Solve-${name}`);
     let { directions, path } = solve(map, startingPosition, endingPosition);
+    addMetric(`Solve-${name}`);
+
+    measure(`Response-${name}`);
     res = await postSolution(mazePath, directions);
+    addMetric(`Response-${name}`);
   }
+  addMetric('WholeRace');
 
   if (res['result'] == 'finished') {
     let border = '='.repeat(40);
@@ -748,6 +774,34 @@ const runRace = async () => {
     console.log('I think something went wrong \\_(^.^)_/');
     console.log(res);
   }
+
+  let analysis = {
+    solveTime: {},
+    responseTime: {},
+    getTime: {}
+  };
+  for (let m of metrics) {
+    let key;
+    if (m.name.startsWith('Solve')) {
+      key = 'solveTime';
+    } else if (m.name.startsWith('Response')) {
+      key = 'responseTime';
+    } else if (m.name.startsWith('Get')) {
+      key = 'getTime';
+    }
+
+    if (typeof key !== 'undefined') {
+      analysis[key].total = (analysis[key].total || 0) + m.result.asSeconds;
+      analysis[key].count = (analysis[key].count || 0 ) + 1;
+    }
+  }
+
+  analysis['networkTime'] = { total: analysis['getTime'].total + analysis['responseTime'].total };
+
+  console.log(analysis);
+  //console.dir(metrics, { depth: null });
+  //console.log(metrics[metrics.length-1]);
+  //console.log(metrics);
 };
 
 // [  0 0 0 0 0 0
