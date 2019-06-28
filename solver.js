@@ -127,11 +127,8 @@ const priorityQueuePairing = () => {
   const merge = (newHeap) => {
     if (heap.elem === undefined) {
       heap = newHeap;
-      length = 1;
       return;
     }
-
-    length += 1;
 
     if (heap.elem < newHeap.elem) {
       heap.subheaps.push(newHeap);
@@ -142,14 +139,11 @@ const priorityQueuePairing = () => {
   };
 
   const findMin = () => {
-    if (length < 1) {
-      return undefined;
-    }
     return heap.node;
   };
 
   const deleteMin = () => {
-    if (isEmpty()) {
+    if (heap.node === undefined) {
       return;
     }
 
@@ -162,6 +156,7 @@ const priorityQueuePairing = () => {
     if (subheaps.length < 1) {
       heap.elem = undefined;
       heap.node = undefined;
+      length = 0;
       return;
     }
 
@@ -169,17 +164,17 @@ const priorityQueuePairing = () => {
       heap.elem = subheaps[0].elem;
       heap.node = subheaps[0].node;
       heap.subheaps = subheaps[0].subheaps;
-      return ;
+      return;
     }
 
     // 2 part merge
-    // part 1
+    // part 1 - Left to right in pairs
     let i = 0;
     let l = subheaps.length;
     let newHeaps = [];
     for (i; i < l; i+=2) {
       if (subheaps[i+1] === undefined) {
-        newHeaps.push({ node: subheaps[i].node, elem: subheaps[i].elem, subheaps: []});
+        newHeaps.push({ node: subheaps[i].node, elem: subheaps[i].elem, subheaps: subheaps[i].subheaps});
         break;
       }
       if (subheaps[i].elem < subheaps[i+1].elem) {
@@ -191,6 +186,7 @@ const priorityQueuePairing = () => {
       }
     }
 
+    // part 2 - Right to left
     const newHeapsLength = newHeaps.length;
     if (newHeapsLength === 1) {
       heap.elem = newHeaps[0].elem;
@@ -200,10 +196,10 @@ const priorityQueuePairing = () => {
     }
 
     for (i = newHeapsLength - 1; i > 0; i--) {
+      // I believe <= preserves LIFO (as opposed to <)
       if (newHeaps[i].elem <= newHeaps[i-1].elem) {
         newHeaps[i].subheaps.push(newHeaps[i-1]);
         newHeaps[i-1] = newHeaps[i];
-        newHeaps[i] = undefined;
       } else {
         newHeaps[i-1].subheaps.push(newHeaps[i]);
       }
@@ -214,10 +210,78 @@ const priorityQueuePairing = () => {
     heap.subheaps = newHeaps[0].subheaps;
   };
 
+  // Find the node
+  // Change it's priority
+  // Extract and merge if necessary
+  // Should be faster when previousValue is known, but an incorrect
+  // value can cause the update to fail silently. This is acceptable for now.
+  const decreaseKey = (node, startToGoal, previousValue) => {
+    if (!has(node)) {
+      return;
+    }
+
+    // Find the node
+    let found;
+
+    if (heap.node[0] == node[0] && heap.node[1] == node[1]) {
+      // Found at the root node
+      heap.elem = startToGoal;
+      return;
+    }
+
+    // We know the node is in the heap, and if we haven't
+    // found it already, there must be subheaps to search.
+    let searchSpace = [{ parentHeap: heap, subheaps: heap.subheaps }];
+    let search;
+    let parentHeap;
+    let subheaps;
+    let i;
+
+    while (searchSpace.length > 0) {
+      search = searchSpace.pop();
+      parentHeap = search.parentHeap;
+      subheaps = search.subheaps;
+
+      for (i = 0; i < subheaps.length; i++) {
+        if (subheaps[i].node[0] == node[0] && subheaps[i].node[1] == node[1]) {
+          // Found it
+          found = subheaps[i];
+          found.elem = startToGoal;
+
+          //if (parentHeap.elem >= found.elem) {
+          if (found.elem > parentHeap.elem) {
+            // We're still fine where we are
+          } else {
+            // Extract and merge
+            // subheaps.splice(i,1);
+            // merge(found);
+            merge(subheaps.splice(i,1)[0]);
+          }
+
+          return;
+        } else {
+          // This should be an optimization if previousValue is given
+          if (previousValue !== undefined) {
+            if (subheaps[i].elem <= previousValue && subheaps[i].subheaps.length > 0) {
+              searchSpace.push({ parentHeap: subheaps[i], subheaps: subheaps[i].subheaps});
+            }
+          } else {
+            if (subheaps[i].subheaps.length > 0) {
+              searchSpace.push({ parentHeap: subheaps[i], subheaps: subheaps[i].subheaps});
+            }
+          }
+        }
+      }
+    }
+  };
+
   const insert = (node, startToGoal) => {
-    if (startToGoal === undefined) {
+    //if (startToGoal === undefined) {
+    if (typeof startToGoal === 'undefined') {
       startToGoal = Infinity;
     }
+
+    length += 1;
 
     merge({ node: node, elem: startToGoal, subheaps: [] });
     itemsInHeap[node] = 1;
@@ -242,6 +306,7 @@ const priorityQueuePairing = () => {
   };
 
   return {
+    decreaseKey: decreaseKey,
     pop: pop,
     insert: insert,
     peek: peek,
@@ -450,9 +515,13 @@ const solve = (map, start, end) => {
     return directions;
   };
 
+  let previousStartToGoal;
+
+  //while (discovered.peek() !== undefined) {
   while (!discovered.isEmpty()) {
+  //while (typeof discovered.peek() !== 'undefined') {
     let current = nextNode();
-    if (current[0] == end[0] && current[1] == end[1]) {
+    if (current[0] === end[0] && current[1] === end[1]) {
       //console.log('Found the end');
       path = toPath(cameFrom, current);
       directions = toCompass(path);
@@ -463,7 +532,7 @@ const solve = (map, start, end) => {
     evaluated[current] = 1;
 
     for (let n of neighbors(current)) {
-      if (evaluated[n] !== undefined) {
+      if (typeof evaluated[n] !== 'undefined') {
         continue;
       }
 
@@ -480,7 +549,13 @@ const solve = (map, start, end) => {
       // This is the best path so far, save it
       cameFrom[n] = current;
       startToNode[n] = tentativeStartToNodeScore;
+      previousStartToGoal = startToGoal[n];
       startToGoal[n] = startToNode[n] + heuristic(n, end);
+      // Update discovered
+      if (typeof previousStartToGoal === 'undefined') {
+        previousStartToGoal = Infinity;
+      }
+      discovered.decreaseKey(n, startToGoal[n], previousStartToGoal);
     }
   }
 
@@ -639,14 +714,14 @@ const runRace = async () => {
 // W = [0,-1]
 
 async function main() {
-  const mode = 'single'; // 'race' or 'single'
+  const mode = 'race'; // 'race' or 'single'
 
   const online = true;
   const onlineParams = {
     maxSize: 200,
     minSize: 200
   };
-  const saveMaze = true;
+  const saveMaze = false;
   const sendSolution = true;
   const localNumber = 1480;
 
@@ -671,9 +746,13 @@ const pqTest = () => {
   q.insert([5,8], 6);
   q.insert([6,9], 2);
   q.insert([7,8], 2);
+  console.dir(q._heap(), { depth: null });
+  q.decreaseKey([8,4], 3, 1);
+  console.dir(q._heap(), { depth: null });
   console.log(q.pop());
   console.log(q.pop());
   console.log(q.pop());
+  console.dir(q._heap(), { depth: null });
   console.log(q.pop());
   console.log(q.pop());
   console.log(q.pop());
