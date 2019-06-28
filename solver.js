@@ -3,6 +3,7 @@
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
+var zlib = require('zlib');
 
 // Written for GitHub's Noops Challenge (Mazebot)
 // https://github.com/noops-challenge/mazebot
@@ -12,26 +13,39 @@ http.globalAgent.keepAlive = true;
 
 // parameters are converted to a query string format
 const apiGet = async (path, parameters = {}) => {
-  let query = url.format({query: parameters});
+  const query = url.format({query: parameters});
+  const options = {
+    headers: {
+      'Accept-Encoding': 'gzip'
+    }
+  };
+
   return new Promise((resolve, reject) => {
-    http.get('http://api.noopschallenge.com' + path + query, function(res) {
+    http.get('http://api.noopschallenge.com' + path + query, options, function(res) {
       const { statusCode } = res;
 
       if (statusCode < 200 || statusCode > 299) {
         reject(new Error('API Response failure: ' + statusCode));
       }
 
-      res.setEncoding('utf8');
+      const chunks = [];
 
-      let data = '';
-
-      res.on('data', (chunk) => { data += chunk; } );
+      res.on('data', (chunk) => { chunks.push(chunk) } );
 
       res.once('end', function() {
+        const data = Buffer.concat(chunks);
+
         try {
-          resolve(JSON.parse(data));
-        } catch {
-          reject(new Error('Failed to parse JSON'));
+          if (res.headers['content-encoding'] === 'gzip') {
+            zlib.gunzip(data, (err, d) => {
+              if (err !== null) { throw(err); }
+              resolve(JSON.parse(d));
+            });
+          } else {
+            resolve(JSON.parse(data));
+          }
+        } catch (e){
+          reject(new Error('GET - Failed to parse JSON: ' + e.message));
         }
       })
     })
@@ -46,7 +60,8 @@ const apiPost = async (path, parameters = {}) => {
   let options = {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Accept-Encoding': 'gzip'
     }
   }
 
@@ -58,15 +73,22 @@ const apiPost = async (path, parameters = {}) => {
         reject(new Error('API Response failure: ' + statusCode));
       }
 
-      res.setEncoding('utf8');
+      const chunks = [];
 
-      let data = '';
-
-      res.on('data', chunk => { data += chunk; } );
+      res.on('data', chunk => { chunks.push(chunk); } );
 
       res.once('end', () => {
+        const data = Buffer.concat(chunks);
+
         try {
-          resolve(JSON.parse(data));
+          if (res.headers['content-encoding'] === 'gzip') {
+            zlib.gunzip(data, (err, d) => {
+              if (err !== null) { throw(err); }
+              resolve(JSON.parse(d));
+            });
+          } else {
+            resolve(JSON.parse(data));
+          }
         } catch (e) {
           reject(new Error('Failed to parse JSON: ' + e));
         }
